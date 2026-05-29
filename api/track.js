@@ -66,13 +66,10 @@ module.exports = async function handler(req, res) {
   }
 
   const d = orderRes.data || {};
-  // The PSA "Shipped" step is hidden from the public — we present a 7-step
-  // process (Arrived through QA2). isShipped still comes from PSA's flag so the
-  // email notification can use it, it's just not shown as a visible step.
+  // Full 8-step process, including the final "Shipped" step.
   const isShipped = !!d.shipped;
   const rawSteps = (Array.isArray(d.orderProgressSteps) ? d.orderProgressSteps.slice() : [])
-    .sort((a, b) => (a.index || 0) - (b.index || 0))
-    .filter(s => s.step !== "Shipped");
+    .sort((a, b) => (a.index || 0) - (b.index || 0));
 
   const steps = rawSteps.map(s => {
     const meta = STEP_META[s.step] || { name: s.step, desc: "" };
@@ -81,7 +78,7 @@ module.exports = async function handler(req, res) {
 
   const doneCount = steps.filter(s => s.done).length;
   // The "In Progress" step = the first step that is not yet completed.
-  // (-1 means all visible steps are done.)
+  // (-1 means all steps are done.)
   const currentIdx = steps.findIndex(s => !s.done);
 
   return res.status(200).json({
